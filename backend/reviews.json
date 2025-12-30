@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "hospital_id": "H001",
+    "hospital_name": "City General Hospital",
+    "hospital_address": "123 Main St, Springfield",
+    "review_text": "Amazing staff! The doctors were very professional and the equipment seemed modern. However, the wait time was quite long.",
+    "timestamp": "2025-12-30T10:30:00Z",
+    "overall_sentiment": "positive",
+    "sentiment_score": 0.75,
+    "aspects": [
+      {
+        "aspect": "staff",
+        "sentiment": "positive",
+        "score": 0.92
+      },
+      {
+        "aspect": "equipment",
+        "sentiment": "positive",
+        "score": 0.78
+      },
+      {
+        "aspect": "wait_time",
+        "sentiment": "negative",
+        "score": 0.68
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "hospital_id": "H002",
+    "hospital_name": "St. Mary's Medical Center",
+    "hospital_address": "456 Oak Ave, Springfield",
+    "review_text": "Terrible experience. The insurance process was confusing and the facility was not clean.",
+    "timestamp": "2025-12-29T14:22:00Z",
+    "overall_sentiment": "negative",
+    "sentiment_score": 0.89,
+    "aspects": [
+      {
+        "aspect": "insurance",
+        "sentiment": "negative",
+        "score": 0.81
+      },
+      {
+        "aspect": "cleanliness",
+        "sentiment": "negative",
+        "score": 0.87
+      }
+    ]
+  }
+]

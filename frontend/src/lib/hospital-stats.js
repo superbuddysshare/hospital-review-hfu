@@ -14,13 +14,21 @@ export function aggregateHospitalStats(reviews) {
   hospitalMap.forEach((hospitalReviews, hospitalName) => {
     const positive = hospitalReviews.filter((r) => r.overall_sentiment === 'positive').length
     const negative = hospitalReviews.filter((r) => r.overall_sentiment === 'negative').length
-    const neutral = hospitalReviews.filter((r) => r.overall_sentiment === 'neutral').length
+    const mixed = hospitalReviews.filter((r) => r.overall_sentiment === 'mixed').length
 
     const totalScore = hospitalReviews.reduce((sum, r) => sum + r.sentiment_score, 0)
     const averageScore = totalScore / hospitalReviews.length
 
-    const totalStarRating = hospitalReviews.reduce((sum, r) => sum + (r.star_rating || 0), 0)
-    const averageStarRating = totalStarRating / hospitalReviews.length
+    const derivedStarTotal = hospitalReviews.reduce((sum, r) => {
+      if (r.overall_sentiment === 'positive') {
+        return sum + 5
+      }
+      if (r.overall_sentiment === 'negative') {
+        return sum + 1
+      }
+      return sum + 3
+    }, 0)
+    const averageStarRating = derivedStarTotal / hospitalReviews.length
 
     const aspectMap = new Map()
     hospitalReviews.forEach((review) => {
@@ -28,18 +36,17 @@ export function aggregateHospitalStats(reviews) {
         review.aspects.forEach((aspect) => {
           if (!aspectMap.has(aspect.aspect)) {
             aspectMap.set(aspect.aspect, { 
-              sentiments: [], 
+              positive: 0,
+              negative: 0,
               count: 0,
-              totalStars: 0,
-              starCount: 0
             })
           }
           const aspectData = aspectMap.get(aspect.aspect)
-          aspectData.sentiments.push(aspect.sentiment)
           aspectData.count++
-          if (aspect.star_rating) {
-            aspectData.totalStars += aspect.star_rating
-            aspectData.starCount++
+          if (aspect.sentiment === 'positive') {
+            aspectData.positive += 1
+          } else {
+            aspectData.negative += 1
           }
         })
       }
@@ -47,16 +54,20 @@ export function aggregateHospitalStats(reviews) {
 
     const commonAspects = Array.from(aspectMap.entries())
       .map(([aspect, data]) => {
-        const posCount = data.sentiments.filter((s) => s === 'positive').length
-        const negCount = data.sentiments.filter((s) => s === 'negative').length
-        const avgSentiment =
-          posCount > negCount ? 'positive' : negCount > posCount ? 'negative' : 'neutral'
-        const avgStarRating = data.starCount > 0 ? data.totalStars / data.starCount : 0
+        const posCount = data.positive
+        const negCount = data.negative
+        const totalMentions = posCount + negCount
+
+        // Determine sentiment: more positives -> positive, else negative
+        const avgSentiment = posCount >= negCount ? 'positive' : 'negative'
+
         return {
           aspect,
           count: data.count,
           average_sentiment: avgSentiment,
-          average_star_rating: avgStarRating
+          positive_count: posCount,
+          negative_count: negCount,
+          total_mentions: totalMentions,
         }
       })
       .sort((a, b) => b.count - a.count)
@@ -72,7 +83,7 @@ export function aggregateHospitalStats(reviews) {
       sentiment_breakdown: {
         positive,
         negative,
-        neutral,
+        mixed,
       },
       reviews: hospitalReviews
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

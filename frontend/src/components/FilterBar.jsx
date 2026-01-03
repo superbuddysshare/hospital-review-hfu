@@ -55,7 +55,6 @@ export function FilterBar({
           <SelectContent>
             <SelectItem value="all">All Sentiment</SelectItem>
             <SelectItem value="positive">Positive</SelectItem>
-            <SelectItem value="neutral">Neutral</SelectItem>
             <SelectItem value="negative">Negative</SelectItem>
           </SelectContent>
         </Select>

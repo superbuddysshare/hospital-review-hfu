@@ -11,7 +11,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Toaster } from '@/components/ui/sonner'
-import { ChatCircleDots, Warning, ArrowClockwise, Heartbeat } from '@phosphor-icons/react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ChatCircleDots, Warning, Heartbeat, CaretLeft, CaretRight } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 
 function App() {
@@ -22,6 +23,8 @@ function App() {
   const [selectedHospital, setSelectedHospital] = useState('all')
   const [selectedSentiment, setSelectedSentiment] = useState('all')
   const [viewingHospital, setViewingHospital] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const fetchReviews = async () => {
     try {
@@ -80,6 +83,19 @@ function App() {
     return filtered
   }, [reviews, searchQuery, selectedHospital, selectedSentiment])
 
+  const totalPages = Math.ceil(filteredReviews.length / itemsPerPage)
+
+  const paginatedReviews = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredReviews.slice(startIndex, endIndex)
+  }, [filteredReviews, currentPage, itemsPerPage])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedHospital, selectedSentiment, itemsPerPage])
+
   const hospitalStats = useMemo(() => {
     return aggregateHospitalStats(reviews)
   }, [reviews])
@@ -93,6 +109,7 @@ function App() {
     setSearchQuery('')
     setSelectedHospital('all')
     setSelectedSentiment('all')
+    setCurrentPage(1)
   }
 
   const handleHospitalClick = (hospitalName) => {
@@ -104,9 +121,8 @@ function App() {
     
     const positive = reviews.filter(r => r.overall_sentiment === 'positive').length
     const negative = reviews.filter(r => r.overall_sentiment === 'negative').length
-    const neutral = reviews.filter(r => r.overall_sentiment === 'neutral').length
     
-    return { positive, negative, neutral, total: reviews.length }
+    return { positive, negative, total: reviews.length }
   }
 
   const stats = getSentimentStats()
@@ -181,7 +197,7 @@ function App() {
                 <ChatCircleDots size={20} weight="fill" className="text-primary" />
                 <h2 className="font-semibold text-sm text-foreground">Community Insights</h2>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <div className="text-2xl font-bold text-foreground">{stats.total}</div>
                   <div className="text-xs text-muted-foreground">Total Reviews</div>
@@ -194,17 +210,13 @@ function App() {
                   <div className="text-2xl font-bold text-negative">{stats.negative}</div>
                   <div className="text-xs text-muted-foreground">Negative</div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-neutral">{stats.neutral}</div>
-                  <div className="text-xs text-muted-foreground">Neutral</div>
-                </div>
               </div>
             </motion.div>
           )}
         </motion.header>
 
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">Recent Reviews</h2>
+          <h2 className="text-xl md:2xl font-bold text-foreground">Recent Reviews</h2>
           <div className="flex gap-2">
             <ReviewDialog onReviewCreated={fetchReviews} existingHospitals={existingHospitals} />
           </div>
@@ -274,12 +286,88 @@ function App() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredReviews.map((review, index) => (
-              <div key={review.id} onClick={() => handleHospitalClick(review.hospital_name)}>
-                <ReviewCard review={review} index={index} />
+          <div className="space-y-6">
+            <div className="space-y-4">
+              {paginatedReviews.map((review, index) => (
+                <div key={review.id} onClick={() => handleHospitalClick(review.hospital_name)}>
+                  <ReviewCard review={review} index={index} />
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {filteredReviews.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Reviews per page:</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="30">30</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <CaretLeft size={16} weight="bold" />
+                    Previous
+                  </Button>
+                  
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <CaretRight size={16} weight="bold" />
+                  </Button>
+                </div>
               </div>
-            ))}
+            )}
           </div>
         )}
 

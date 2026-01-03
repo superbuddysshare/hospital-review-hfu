@@ -42,6 +42,7 @@ def create_review():
         'timestamp': datetime.utcnow().isoformat() + 'Z',
         'overall_sentiment': analysis['sentiment'],
         'sentiment_score': analysis['score'],
+        'star_rating': analysis.get('star_rating', None),
         'aspects': analysis['aspects']
     }
     
@@ -55,6 +56,7 @@ def analyze_text():
     data = request.json
     analysis = analyze_review(data['text'])
     return jsonify(analysis)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, TrendUp, TrendDown, MinusCircle, Sparkle, Star } from '@phosphor-icons/react'
+import { MapPin, TrendUp, TrendDown, Sparkle } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 
@@ -14,7 +14,7 @@ export function ReviewCard({ review, index }) {
       case 'negative':
         return 'bg-negative text-negative-foreground'
       default:
-        return 'bg-neutral text-neutral-foreground'
+        return 'bg-secondary text-foreground'
     }
   }
 
@@ -25,7 +25,7 @@ export function ReviewCard({ review, index }) {
       case 'negative':
         return <TrendDown size={16} weight="bold" />
       default:
-        return <MinusCircle size={16} weight="bold" />
+        return <TrendDown size={16} weight="bold" />
     }
   }
 
@@ -36,7 +36,7 @@ export function ReviewCard({ review, index }) {
       case 'negative':
         return 'border-l-negative'
       default:
-        return 'border-l-neutral'
+        return 'border-l-border'
     }
   }
 
@@ -49,17 +49,6 @@ export function ReviewCard({ review, index }) {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date)
-  }
-
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        size={16}
-        weight={i < rating ? 'fill' : 'regular'}
-        className={i < rating ? 'text-accent' : 'text-muted-foreground'}
-      />
-    ))
   }
 
   const shouldTruncate = review.review_text.length > 300
@@ -91,16 +80,6 @@ export function ReviewCard({ review, index }) {
                   <span>{review.hospital_address}</span>
                 </div>
               )}
-              {review.star_rating && (
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex gap-0.5">
-                    {renderStars(review.star_rating)}
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {review.star_rating}/5
-                  </span>
-                </div>
-              )}
             </div>
             <motion.div
               initial={{ scale: 0.95 }}
@@ -128,7 +107,10 @@ export function ReviewCard({ review, index }) {
             </p>
             {shouldTruncate && (
               <button
-                onClick={() => setExpanded(!expanded)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpanded(!expanded)
+                }}
                 className="text-primary hover:underline text-sm font-medium mt-2"
               >
                 {expanded ? 'Show Less' : 'Read More'}
@@ -140,7 +122,7 @@ export function ReviewCard({ review, index }) {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Sparkle size={18} weight="fill" className="text-primary" />
-                <h4 className="text-sm font-semibold text-foreground">AI Analysis</h4>
+                <h4 className="text-sm font-semibold text-foreground">Aspects</h4>
               </div>
               <div className="flex flex-wrap gap-2">
                 {review.aspects.map((aspect, idx) => (
@@ -150,12 +132,6 @@ export function ReviewCard({ review, index }) {
                     className={`${getSentimentColor(aspect.sentiment)} border-0 flex items-center gap-1.5`}
                   >
                     {aspect.aspect}
-                    {aspect.star_rating && (
-                      <span className="flex items-center gap-0.5 ml-1">
-                        <Star size={12} weight="fill" />
-                        {aspect.star_rating}
-                      </span>
-                    )}
                   </Badge>
                 ))}
               </div>

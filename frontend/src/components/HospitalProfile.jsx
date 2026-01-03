@@ -12,7 +12,6 @@ import {
   MinusCircle,
   Sparkle,
   ArrowLeft,
-  Star,
 } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 
@@ -30,7 +29,7 @@ export function HospitalProfile({ hospital, onBack }) {
       case 'negative':
         return 'bg-negative text-negative-foreground'
       default:
-        return 'bg-neutral text-neutral-foreground'
+        return 'bg-secondary text-foreground'
     }
   }
 
@@ -41,7 +40,7 @@ export function HospitalProfile({ hospital, onBack }) {
       case 'negative':
         return <TrendDown size={16} weight="bold" />
       default:
-        return <MinusCircle size={16} weight="bold" />
+        return <TrendDown size={16} weight="bold" />
     }
   }
 
@@ -58,17 +57,6 @@ export function HospitalProfile({ hospital, onBack }) {
 
   const getSentimentPercentage = (count) => {
     return (count / hospital.total_reviews) * 100
-  }
-
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        size={20}
-        weight={i < Math.round(rating) ? 'fill' : 'regular'}
-        className={i < Math.round(rating) ? 'text-accent' : 'text-muted-foreground'}
-      />
-    ))
   }
 
   return (
@@ -100,27 +88,10 @@ export function HospitalProfile({ hospital, onBack }) {
                 </div>
               )}
             </div>
-            <div className="text-right">
-              {hospital.average_star_rating > 0 && (
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 justify-end mb-1">
-                    {renderStars(hospital.average_star_rating)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {hospital.average_star_rating.toFixed(1)}/5 stars
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-3xl font-bold text-foreground">
-                <Sparkle size={32} weight="fill" className="text-primary" />
-                {hospital.average_score.toFixed(2)}
-              </div>
-              <div className="text-sm text-muted-foreground">Sentiment Score</div>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-secondary/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <ChatCircleDots size={20} weight="fill" className="text-primary" />
@@ -139,20 +110,6 @@ export function HospitalProfile({ hospital, onBack }) {
               </div>
               <Progress
                 value={getSentimentPercentage(hospital.sentiment_breakdown.positive)}
-                className="mt-2 h-2"
-              />
-            </div>
-
-            <div className="bg-neutral/10 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MinusCircle size={20} weight="bold" className="text-neutral" />
-                <span className="text-sm font-semibold">Neutral</span>
-              </div>
-              <div className="text-3xl font-bold text-neutral">
-                {hospital.sentiment_breakdown.neutral}
-              </div>
-              <Progress
-                value={getSentimentPercentage(hospital.sentiment_breakdown.neutral)}
                 className="mt-2 h-2"
               />
             </div>
@@ -178,23 +135,41 @@ export function HospitalProfile({ hospital, onBack }) {
                 <Sparkle size={20} weight="fill" className="text-primary" />
                 <h3 className="text-lg font-semibold">Most Mentioned Aspects</h3>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {hospital.common_aspects.map((aspect, idx) => (
-                  <Badge
-                    key={idx}
-                    className={`${getSentimentColor(aspect.average_sentiment)} flex items-center gap-1.5 px-3 py-1.5`}
-                  >
-                    {getSentimentIcon(aspect.average_sentiment)}
-                    {aspect.aspect}
-                    <span className="ml-1 text-xs opacity-80">({aspect.count})</span>
-                    {aspect.average_star_rating > 0 && (
-                      <span className="flex items-center gap-0.5 ml-1">
-                        <Star size={12} weight="fill" />
-                        {aspect.average_star_rating.toFixed(1)}
-                      </span>
-                    )}
-                  </Badge>
-                ))}
+              <div className="flex flex-wrap gap-4">
+                {hospital.common_aspects.map((aspect, idx) => {
+                  const total = aspect.total_mentions || (aspect.positive_count + aspect.negative_count) || 1
+                  const positivePct = Math.round((aspect.positive_count / total) * 100)
+                  const negativePct = Math.max(0, 100 - positivePct)
+
+                  return (
+                    <div key={idx} className="min-w-[160px] flex-1">
+                      <div className="flex items-center justify-between mb-1 text-xs font-semibold text-muted-foreground">
+                        <span className="capitalize text-foreground">{aspect.aspect.replace(/_/g, ' ')}</span>
+                        <span>{aspect.count}×</span>
+                      </div>
+                      <div className="relative h-10 rounded-lg overflow-hidden bg-muted border border-border">
+                        <div className="absolute inset-0 flex">
+                          <div
+                            className="bg-positive"
+                            style={{ width: `${positivePct}%` }}
+                          />
+                          <div
+                            className="bg-negative"
+                            style={{ width: `${negativePct}%` }}
+                          />
+                        </div>
+                        <div className="relative z-10 flex items-center justify-between h-full px-2 text-sm font-bold drop-shadow">
+                          <span className="text-positive bg-background/70 px-1 rounded-sm border border-positive/40">
+                            {aspect.positive_count}
+                          </span>
+                          <span className="text-negative bg-background/70 px-1 rounded-sm border border-negative/40">
+                            {aspect.negative_count}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -213,17 +188,6 @@ export function HospitalProfile({ hospital, onBack }) {
                 ? review.review_text
                 : review.review_text.slice(0, 300) + '...'
 
-            const renderReviewStars = (rating) => {
-              return Array.from({ length: 5 }, (_, i) => (
-                <Star
-                  key={i}
-                  size={14}
-                  weight={i < rating ? 'fill' : 'regular'}
-                  className={i < rating ? 'text-accent' : 'text-muted-foreground'}
-                />
-              ))
-            }
-
             return (
               <motion.div
                 key={review.id}
@@ -238,16 +202,6 @@ export function HospitalProfile({ hospital, onBack }) {
                         <div className="text-sm text-muted-foreground mb-2">
                           {formatDate(review.timestamp)}
                         </div>
-                        {review.star_rating && (
-                          <div className="flex items-center gap-2">
-                            <div className="flex gap-0.5">
-                              {renderReviewStars(review.star_rating)}
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {review.star_rating}/5
-                            </span>
-                          </div>
-                        )}
                       </div>
                       <Badge
                         className={`${getSentimentColor(review.overall_sentiment)} flex items-center gap-1.5`}
@@ -286,12 +240,6 @@ export function HospitalProfile({ hospital, onBack }) {
                               className={`${getSentimentColor(aspect.sentiment)} border-0 text-xs flex items-center gap-1`}
                             >
                               {aspect.aspect}
-                              {aspect.star_rating && (
-                                <span className="flex items-center gap-0.5 ml-1">
-                                  <Star size={10} weight="fill" />
-                                  {aspect.star_rating}
-                                </span>
-                              )}
                             </Badge>
                           ))}
                         </div>

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Plus, Sparkle, Warning, Check, TrendUp, TrendDown, MinusCircle, CaretUpDown, Star } from '@phosphor-icons/react'
+import { Plus, Sparkle, Warning, Check, TrendUp, TrendDown, MinusCircle, CaretUpDown } from '@phosphor-icons/react'
 import { api } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -98,8 +98,10 @@ export function ReviewDialog({ onReviewCreated, existingHospitals }) {
         return 'bg-positive text-positive-foreground'
       case 'negative':
         return 'bg-negative text-negative-foreground'
+      case 'mixed':
+        return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
       default:
-        return 'bg-neutral text-neutral-foreground'
+        return 'bg-secondary text-foreground'
     }
   }
 
@@ -109,6 +111,8 @@ export function ReviewDialog({ onReviewCreated, existingHospitals }) {
         return <TrendUp size={16} weight="bold" />
       case 'negative':
         return <TrendDown size={16} weight="bold" />
+      case 'mixed':
+        return <MinusCircle size={16} weight="bold" />
       default:
         return <MinusCircle size={16} weight="bold" />
     }
@@ -265,12 +269,6 @@ export function ReviewDialog({ onReviewCreated, existingHospitals }) {
                           className={`${getSentimentColor(aspect.sentiment)} border-0 text-xs flex items-center gap-1`}
                         >
                           {aspect.aspect}
-                          {aspect.star_rating && (
-                            <span className="flex items-center gap-0.5 ml-1">
-                              <Star size={10} weight="fill" />
-                              {aspect.star_rating}
-                            </span>
-                          )}
                         </Badge>
                       ))}
                     </div>

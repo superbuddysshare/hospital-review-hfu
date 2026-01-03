@@ -5,6 +5,11 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+backups/
+original_dataset/
+.venv/
+evaluation_results*.json
+
 
 # Virtual Environment
 venv/
@@ -13,6 +18,7 @@ env/
 # Node
 node_modules/
 /build
+package-lock.json
 
 # Environment
 .env

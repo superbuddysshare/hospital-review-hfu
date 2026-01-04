@@ -23,6 +23,13 @@ star_rating_models = {
     ),
 }
 
+# DeBERTa MNLI for aspects (requires protobuf and sentencepiece installed)
+aspect_classifier = pipeline(
+    "zero-shot-classification",
+    model="MoritzLaurer/DeBERTa-v3-base-mnli",
+    device=DEVICE,
+)
+
 binary_sentiment_models = {
     'roberta': pipeline(
         "sentiment-analysis",
@@ -42,65 +49,26 @@ POSITIVE_OUTCOME_TOKENS = {
 }
 
 
-ASPECT_PROFILES = {
-    'staff': {
-        'keywords': {
-            'staff', 'staffs', 'personnel', 'employees', 'frontdesk', 'front-desk', 'front', 'desk', 'reception',
-            'receptionist', 'receptionists', 'coordinator', 'coordinators', 'management', 'admin', 'administration', 'team',
-            'helpers', 'support', 'customer', 'care', 'ward', 'attendant', 'attendants'
-        },
-        'positive_terms': {'friendly', 'polite', 'helpful', 'supportive', 'cooperative', 'professional', 'attentive', 'courteous', 'respectful', 'responsive', 'kind', 'caring', 'swift', 'warm', 'humble', 'nice'},
-        'negative_terms': {'rude', 'arrogant', 'dismissive', 'careless', 'unprofessional', 'hostile', 'unhelpful', 'irresponsible', 'apathetic', 'argumentative', 'lazy', 'slow', 'ignorant', 'harsh'},
-        'positive_phrases': ['staff was very caring', 'support team', 'helpful staff', 'staff took good care', 'people working there', 'people were responsive', 'responding quickly'],
-        'negative_phrases': ['lack of staff', 'no staff', 'under staffed', 'short staffed', 'rude staff', 'staff was not helpful', 'staff not helpful', 'not helpful though', 'not helpful but'],
-        'negation_hooks': ['understaffed', 'under-staffed', 'shortstaffed', 'short-staffed'],
-    },
-    'cleanliness': {
-        'keywords': {
-            'clean', 'cleanliness', 'dirty', 'filthy', 'sanitary', 'hygiene', 'hygienic', 'messy', 'odor', 'smell', 'stench',
-            'trash', 'garbage', 'washroom', 'washrooms', 'toilet', 'toilets', 'restroom', 'restrooms', 'bathroom', 'bathrooms',
-            'ward', 'wards', 'bed', 'beds', 'linen', 'corridor', 'corridors', 'floor', 'floors', 'spill', 'spills'
-        },
-        'positive_terms': {'clean', 'spotless', 'sterile', 'fresh', 'tidy', 'immaculate', 'hygienic', 'sanitized', 'neat', 'well-kept', 'organized'},
-        'negative_terms': {'dirty', 'gross', 'smelly', 'filthy', 'stained', 'sticky', 'unsanitary', 'nasty', 'stinky', 'unclean', 'foul', 'messy'},
-        'positive_phrases': ['very clean', 'well maintained', 'neat and tidy', 'sparkling clean'],
-        'negative_phrases': ['smelled bad', 'smelled awful', 'dirty wards', 'filthy toilets', 'unclean rooms'],
-        'negation_hooks': ['unclean', 'unhygienic'],
-    },
-    'wait_time': {
-        'keywords': {
-            'wait', 'waiting', 'queue', 'line', 'delay', 'delays', 'appointment', 'appointments', 'schedule', 'scheduled',
-            'hours', 'hour', 'minutes', 'time', 'hold', 'hold-up', 'backlog', 'crowded', 'rush', 'token'
-        },
-        'positive_terms': {'short', 'quick', 'fast', 'efficient', 'prompt', 'timely', 'smooth', 'minimal', 'instant', 'swift'},
-        'negative_terms': {'long', 'slow', 'endless', 'forever', 'delayed', 'late', 'ridiculous', 'awful', 'terrible', 'crowded', 'waiting', 'wait', 'waited', 'delay', 'idle', 'stuck', 'time'},
-        'positive_phrases': ['hardly any wait', 'no waiting', 'super quick', 'fast appointment'],
-        'negative_phrases': ['waited for hours', 'long waiting time', 'took forever', 'kept waiting', 'delay in appointment', 'wait for some time', 'had to wait', 'wait for time'],
-        'negation_hooks': ['rescheduled', 'postponed'],
-    },
-    'treatment': {
-        'keywords': {
-            'treatment', 'treatments', 'therapy', 'therapies', 'procedure', 'procedures', 'surgery', 'surgeries', 'operation',
-            'operations', 'care', 'care-plan', 'careplan', 'diagnosis', 'diagnosed', 'recovery', 'medication', 'medications',
-            'healing', 'consultation', 'doctor', 'doctors', 'nurse', 'nurses', 'nursing', 'specialist', 'surgeon', 'physician',
-            'consultant', 'followup', 'follow-up', 'treated'
-        },
-        'positive_terms': {'effective', 'successful', 'smooth', 'painless', 'thorough', 'gentle', 'life-saving', 'careful', 'precise', 'well-planned', 'quick', 'cured', 'recovered', 'improved', 'accurate', 'confidence', 'treated', 'better', 'fixed', 'resolved', 'ok', 'okay', 'fine', 'alright'},
-        'negative_terms': {'ineffective', 'painful', 'botched', 'failed', 'rough', 'aggressive', 'harmful', 'rushed', 'incorrect', 'delayed', 'complicated', 'worse', 'suffered', 'mistake', 'negligent'},
-        'positive_phrases': ['took great care', 'treatment was successful', 'quick recovery', 'saved my life'],
-        'negative_phrases': ['wrong diagnosis', 'misdiagnosed', 'treatment failed', 'no improvement', 'unnecessary tests', 'did not like the doctor', 'didnt like the doctor', 'did not help', "didn't help", "didn't help me", 'procedure did not help', "procedure didn't help", 'did not work', "didn't work"],
-        'negation_hooks': ['misdiagnosed', 'untrained'],
-    },
-}
-
 ASPECT_LABELS = {
     'staff': 'Staff',
-    'cleanliness': 'Cleanliness',
     'wait_time': 'Wait Time',
     'treatment': 'Treatment',
+    'insurance': 'Insurance',
 }
 
-DEFICIT_TERMS = {'lack', 'lacking', 'shortage', 'shortages', 'scarce', 'scarcity', 'missing', 'absence', 'absent'}
+_WAIT_TIME_ALIASES = [
+    'Wait Time',
+    'Waiting Time',
+    'Long Wait',
+    'Long Waiting Time',
+    'Wait Times',
+    'Queue Time',
+    'Delays',
+]
+
+_CANONICAL_ASPECT_MAP = {value.lower(): value for value in ASPECT_LABELS.values()}
+for alias in _WAIT_TIME_ALIASES:
+    _CANONICAL_ASPECT_MAP[alias.lower()] = ASPECT_LABELS['wait_time']
 
 CONTRACTIONS = {
     "isn't": "is not",
@@ -156,103 +124,58 @@ def _convert_emojis_to_text(text: str) -> str:
     return demojized
 
 
-def _tokenize_for_aspects(text: str):
-    return re.findall(r"[a-z0-9']+", text.lower())
 
 
-def _split_sentences(text: str):
-    if not text:
+def _canonicalize_aspect(label: str) -> str:
+    if not label:
+        return ''
+    return _CANONICAL_ASPECT_MAP.get(label.strip().lower(), '')
+
+
+def _model_aspect_analysis(text: str):
+    if not text or not text.strip():
         return []
-    return [s.strip() for s in re.split(r'[.!?\n]+', text) if s.strip()]
 
+    candidate_labels = []
+    seen = set()
 
-def _sentence_mentions_aspect(tokens, keywords):
-    return any(token in keywords for token in tokens)
+    def _add_candidate(label: str):
+        if label in seen:
+            return
+        seen.add(label)
+        candidate_labels.append(f"{label} positive")
+        candidate_labels.append(f"{label} negative")
 
+    for label in ASPECT_LABELS.values():
+        _add_candidate(label)
+    for alias in _WAIT_TIME_ALIASES:
+        _add_candidate(alias)
 
-def _count_phrase_hits(sentence_lower, phrases):
-    if not phrases:
-        return 0
-    return sum(1 for phrase in phrases if phrase in sentence_lower)
-
-
-def _has_deficit_near_keyword(tokens, keywords, positive_terms):
-    for idx, token in enumerate(tokens):
-        if token not in keywords:
-            continue
-        window = tokens[max(0, idx - 2): idx + 1]
-        if any(t in positive_terms or t in POSITIVE_OUTCOME_TOKENS for t in window):
-            continue
-        if any(t in DEFICIT_TERMS for t in window):
-            return True
-    return False
-
-
-def _score_sentence_for_aspect(tokens, sentence_lower, config):
-    pos_terms = config.get('positive_terms', set())
-    neg_terms = config.get('negative_terms', set())
-
-    pos = _count_phrase_hits(sentence_lower, config.get('positive_phrases', [])) * 1.5
-    neg = _count_phrase_hits(sentence_lower, config.get('negative_phrases', [])) * 1.5
-
-    pos += sum(1 for token in tokens if token in pos_terms)
-    neg += sum(1 for token in tokens if token in neg_terms)
-
-    neg += _count_phrase_hits(sentence_lower, config.get('negation_hooks', [])) * 2
-
-    if _has_deficit_near_keyword(tokens, config.get('keywords', set()), pos_terms):
-        neg += 2
-
-    # Contrast handling: if sentence has both positive and negative cues and a positive outcome, soften negatives
-    if pos > 0 and neg > 0:
-        if any(t in POSITIVE_OUTCOME_TOKENS for t in tokens) or ' but ' in sentence_lower or ' though ' in sentence_lower or ' however ' in sentence_lower or ' yet ' in sentence_lower:
-            neg *= 0.6
-
-    return pos, neg
-
-
-def extract_aspects(text: str):
-    sentences = _split_sentences(text)
-    if not sentences:
+    try:
+        result = aspect_classifier(text, candidate_labels=candidate_labels, multi_label=True)
+    except Exception:
         return []
+
+    scores = {}
+    for lbl, score in zip(result.get('labels', []), result.get('scores', [])):
+        parts = lbl.split(' ', 1)
+        if len(parts) != 2:
+            continue
+        aspect_label, sentiment = parts
+        canonical = _canonicalize_aspect(aspect_label)
+        if not canonical:
+            continue
+        scores.setdefault(canonical, {})[sentiment] = score
 
     findings = []
-    aspect_scores = {slug: {'pos': 0.0, 'neg': 0.0, 'hits': 0} for slug in ASPECT_PROFILES}
-
-    for sentence in sentences:
-        sentence_lower = sentence.lower()
-        tokens = _tokenize_for_aspects(sentence)
-        if not tokens:
+    for aspect_label, sent_dict in scores.items():
+        pos_score = sent_dict.get('positive', 0)
+        neg_score = sent_dict.get('negative', 0)
+        if max(pos_score, neg_score) < 0.3:
             continue
-
-        for slug, config in ASPECT_PROFILES.items():
-            if not _sentence_mentions_aspect(tokens, config.get('keywords', set())):
-                continue
-
-            pos, neg = _score_sentence_for_aspect(tokens, sentence_lower, config)
-            if pos == 0 and neg == 0:
-                continue
-
-            aspect_scores[slug]['pos'] += pos
-            aspect_scores[slug]['neg'] += neg
-            aspect_scores[slug]['hits'] += 1
-
-    for slug, stats in aspect_scores.items():
-        net = stats['pos'] - stats['neg']
-        if stats['pos'] == stats['neg'] == 0:
-            continue
-
-        sentiment = 'positive' if net > 0 else 'negative'
-        strength = round(abs(net) + (0.3 * stats['hits']), 2)
-
-        if strength <= 0.5:
-            continue
-
-        findings.append({
-            'aspect': ASPECT_LABELS.get(slug, slug.replace('_', ' ').title()),
-            'sentiment': sentiment,
-            'strength': strength,
-        })
+        sentiment = 'positive' if pos_score >= neg_score else 'negative'
+        strength = round(abs(pos_score - neg_score), 2)
+        findings.append({'aspect': aspect_label, 'sentiment': sentiment, 'strength': strength})
 
     findings.sort(key=lambda item: item.get('strength', 0), reverse=True)
     trimmed = [{'aspect': item['aspect'], 'sentiment': item['sentiment']} for item in findings[:4]]
@@ -382,18 +305,46 @@ def _aggregate_sentiment(star_rating, star_weight, binary_results):
     return final_sentiment, round(confidence, 2), votes
 
 
+VALID_MODES = {'combined', 'binary', 'star'}
+_ACTIVE_MODE = 'combined'
+
+
+def set_analysis_mode(mode: str) -> str:
+    """Set global analysis mode for subsequent calls."""
+    global _ACTIVE_MODE
+    normalized = (mode or 'combined').lower()
+    if normalized not in VALID_MODES:
+        normalized = 'combined'
+    _ACTIVE_MODE = normalized
+    return _ACTIVE_MODE
+
+
+def get_analysis_mode() -> str:
+    return _ACTIVE_MODE
+
+
 def analyze_review(text: str):
     raw_text = text or ''
     cleaned_text = preprocess_review(raw_text)
     text_for_models = cleaned_text or raw_text
 
-    star_results = _run_star_models(text_for_models)
-    star_rating, star_weight = _aggregate_star_results(star_results)
+    normalized_mode = _ACTIVE_MODE
 
-    binary_results = _run_binary_models(text_for_models)
+    run_star = normalized_mode in {'combined', 'star'}
+    run_binary = normalized_mode in {'combined', 'binary'}
+
+    star_results = []
+    star_rating = None
+    star_weight = 0.0
+    if run_star:
+        star_results = _run_star_models(text_for_models)
+        star_rating, star_weight = _aggregate_star_results(star_results)
+
+    binary_results = _run_binary_models(text_for_models) if run_binary else []
+
     sentiment_label, confidence, _votes = _aggregate_sentiment(star_rating, star_weight, binary_results)
 
-    aspects = extract_aspects(raw_text)
+    aspects = _model_aspect_analysis(raw_text)
 
     strong_failure = re.search(r"(didn't help|did not help|didn't work|did not work|no improvement|procedure (didn't|did not) help|treatment failed)", raw_text, flags=re.IGNORECASE)
     has_positive_outcome = any(tok in cleaned_text.split() for tok in POSITIVE_OUTCOME_TOKENS)
@@ -402,10 +353,6 @@ def analyze_review(text: str):
         sentiment_label = 'negative'
         confidence = max(confidence, 0.55)
 
-    if sentiment_label == 'negative' and has_positive_outcome and not strong_failure:
-        # If treatment succeeded or outcome words exist without strong failure, lean positive to avoid over-weighting minor negatives
-        sentiment_label = 'positive'
-        confidence = max(confidence, 0.55)
 
     return {
         'sentiment': sentiment_label,

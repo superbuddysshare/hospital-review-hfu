@@ -12,7 +12,8 @@ Usage: python reanalyze_reviews.py
 """
 import json
 import os
-from nlp_analyzer import analyze_review
+import argparse
+from nlp_analyzer import analyze_review, set_analysis_mode, get_analysis_mode
 from datetime import datetime
 
 REVIEWS_FILE = 'reviews.json'
@@ -97,14 +98,22 @@ def reanalyze_all_reviews():
         print(f"\n⭐ Average Star Rating: {avg_stars:.2f}/5.0")
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Re-analyze stored reviews with a selected sentiment mode.")
+    parser.add_argument('--mode', choices=['combined', 'binary', 'star'], help='Analysis mode to use for this run')
+    args = parser.parse_args()
+
+    selected_mode = args.mode or os.environ.get('ANALYSIS_MODE', 'combined')
+    active_mode = set_analysis_mode(selected_mode)
+
     print("=" * 60)
     print("Hospital Review Re-Analysis Tool")
     print("=" * 60)
+    print(f"Using analysis mode: {active_mode}")
     print()
-    
+
     # Confirm action
     response = input("⚠️  This will update all reviews. Continue? (yes/no): ").strip().lower()
-    
+
     if response in ['yes', 'y']:
         print()
         reanalyze_all_reviews()

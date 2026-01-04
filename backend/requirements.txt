@@ -2,6 +2,9 @@ flask==3.0.0
 flask-cors==4.0.0
 transformers==4.36.0
 pandas==2.1.4
+# DeBERTa MNLI zero-shot aspects
+protobuf==4.25.3
+sentencepiece==0.1.99
 # Use the CUDA build when available; falls back to CPU if CUDA drivers aren't present.
 --extra-index-url https://download.pytorch.org/whl/cu121
 torch==2.1.0+cu121

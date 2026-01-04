@@ -2,13 +2,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 from datetime import datetime
-from nlp_analyzer import analyze_review
+from nlp_analyzer import analyze_review, set_analysis_mode
 import os
 
 app = Flask(__name__)
 CORS(app)
 
 REVIEWS_FILE = 'reviews.json'
+ANALYSIS_MODE = set_analysis_mode(os.environ.get('ANALYSIS_MODE', 'combined'))
 
 def load_reviews():
     if os.path.exists(REVIEWS_FILE):

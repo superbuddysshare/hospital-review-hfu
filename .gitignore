@@ -9,6 +9,7 @@ backups/
 original_dataset/
 .venv/
 evaluation_results*.json
+reviews.json
 
 
 # Virtual Environment

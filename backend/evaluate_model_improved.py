@@ -5,10 +5,11 @@ Uses: ensemble sentiment pipeline with derived star rating vote
 Outputs: accuracy metrics, confusion matrix, precision/recall/F1
 """
 import os
+import argparse
 import pandas as pd
 from datetime import datetime
 import json
-from nlp_analyzer import analyze_review, preprocess_review
+from nlp_analyzer import analyze_review, preprocess_review, set_analysis_mode, get_analysis_mode
 
 def load_original_dataset(csv_path='original_dataset/hospital.csv'):
     """Load the original doctor reviews dataset"""
@@ -221,9 +222,17 @@ def print_results(results):
 
 if __name__ == '__main__':
     try:
+        parser = argparse.ArgumentParser(description="Evaluate the analyzer against the hospital dataset")
+        parser.add_argument('--mode', choices=['combined', 'binary', 'star'], help='Analysis mode to use for this run')
+        args = parser.parse_args()
+
+        selected_mode = args.mode or os.environ.get('ANALYSIS_MODE', 'combined')
+        active_mode = set_analysis_mode(selected_mode)
+
         print("="*60)
         print("Hospital Review Model Evaluation - Improved Version")
         print("="*60)
+        print(f"Using analysis mode: {active_mode}")
         print()
         
         # Load dataset
